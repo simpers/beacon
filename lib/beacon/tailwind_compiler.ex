@@ -10,10 +10,10 @@ defmodule Beacon.RuntimeCSS.TailwindCompiler do
   You can use any of the [available options from Tailwind CSS](https://tailwindcss.com/docs/configuration) but
   you must bundle the file if using Plugins or requiring any external module, see the [Tailwind Setup guide](https://hexdocs.pm/beacon/tailwind-setup.html)
   for more info and examples.
-
   """
 
   require Logger
+
   alias Beacon.Content
 
   @behaviour Beacon.RuntimeCSS
