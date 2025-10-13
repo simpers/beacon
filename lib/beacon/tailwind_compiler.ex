@@ -48,7 +48,7 @@ defmodule Beacon.RuntimeCSS.TailwindCompiler do
   defp generate_tailwind_config_file(site, tmp_dir, content) do
     tailwind_config = tailwind_config_path!(site)
 
-    unless Application.get_env(:tailwind, :version) do
+    if !Application.get_env(:tailwind, :version) do
       default_tailwind_version = Beacon.tailwind_version()
       Application.put_env(:tailwind, :version, default_tailwind_version)
     end
