@@ -59,7 +59,7 @@ defmodule Beacon.MixProject do
       # Overridable
       override_dep(:phoenix, "~> 1.7", "PHOENIX_VERSION", "PHOENIX_PATH"),
       override_dep(:phoenix_live_view, ">= 1.0.1", "PHOENIX_LIVE_VIEW_VERSION", "PHOENIX_LIVE_VIEW_PATH"),
-      override_dep(:mdex, "~> 0.2", "MDEX_VERSION", "MDEX_PATH"),
+      override_dep(:mdex, "~> 0.9", "MDEX_VERSION", "MDEX_PATH"),
 
       # Runtime
       {:accent, "~> 1.1"},
@@ -83,7 +83,7 @@ defmodule Beacon.MixProject do
       {:phoenix_pubsub, "~> 2.1"},
       {:postgrex, "~> 0.16"},
       {:safe_code, "~> 0.2"},
-      {:solid, "~> 0.14"},
+      {:solid, "~> 1.1"},
       # TODO: tailwind v4 needs more testing
       {:tailwind, "~> 0.2"},
       esbuild_version(),

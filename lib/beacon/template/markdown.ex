@@ -40,8 +40,11 @@ defmodule Beacon.Template.Markdown do
         render: [
           unsafe_: true
         ],
-        features: [
-          syntax_highlight_theme: syntax_highlight_theme
+        syntax_highlight: [
+          formatter: {
+            :html_inline,
+            theme: syntax_highlight_theme
+          }
         ]
       )
 
