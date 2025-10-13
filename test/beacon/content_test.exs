@@ -544,8 +544,13 @@ defmodule Beacon.ContentTest do
     test "create_snippet_helper should validate invalid body" do
       attrs = %{site: :my_site, name: "foo_snippet", body: "page title is {{ page.title"}
 
-      assert {:error, %Ecto.Changeset{errors: [body: {err, []}], valid?: false}} = Content.create_snippet_helper(attrs)
-      assert err =~ "Reason: expected end of string, line: 1"
+      assert {:error,
+              %Ecto.Changeset{
+                errors: [body: {err, []}],
+                valid?: false
+              }} = Content.create_snippet_helper(attrs)
+
+      assert err =~ "Tag or Object not properly terminated"
     end
 
     test "create broadcasts updated content event" do
