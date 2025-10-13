@@ -226,7 +226,7 @@ defmodule Beacon.Loader.Routes do
                route,
                acc
              ) do
-          unless is_binary(hd(acc)) do
+          if not is_binary(hd(acc)) do
             raise ArgumentError,
                   "interpolated query string params must be separated by &, got: #{Macro.to_string(route)}"
           end
@@ -242,7 +242,7 @@ defmodule Beacon.Loader.Routes do
         end
 
         defp verify_query(["&" <> _ = param | rest], route, acc) do
-          unless String.contains?(param, "=") do
+          if !String.contains?(param, "=") do
             raise ArgumentError,
                   "expected query string param key to end with = or declare a static key value pair, got: #{inspect(param)}"
           end
