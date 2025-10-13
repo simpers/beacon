@@ -3445,9 +3445,9 @@ defmodule Beacon.Content do
 
   defp validate_snippet_helper(changeset) do
     Changeset.validate_change(changeset, :body, fn :body, body ->
-      case Solid.parse(body, parser: Snippets.Parser) do
+      case solid_parse(body) do
         {:ok, _template} -> []
-        {:error, error} -> [{:body, error.message}]
+        {:error, error} -> [{:body, Exception.message(error)}]
       end
     end)
   end
@@ -3550,10 +3550,22 @@ defmodule Beacon.Content do
       "live_data" => deep_stringify(live_data)
     }
 
-    with {:ok, template} <- Solid.parse(template, parser: Snippets.Parser),
-         {:ok, template} <- Solid.render(template, assigns) do
+    with {:ok, template} <- solid_parse(template),
+         {:ok, template, []} <- Solid.render(template, assigns) do
       {:ok, to_string(template)}
     else
+      {:ok, template, errors} ->
+        message = """
+        failed to render the following snippet
+
+        #{template}
+
+        Errors: #{inspect(errors)}
+
+        """
+
+        {:error, Beacon.SnippetError.exception(message)}
+
       {:error, error} ->
         {:error, Beacon.SnippetError.exception(error)}
 
@@ -3574,6 +3586,10 @@ defmodule Beacon.Content do
   defp deep_stringify(struct) when is_struct(struct), do: deep_stringify(Map.from_struct(struct))
   defp deep_stringify(map) when is_map(map), do: Map.new(map, fn {k, v} -> {to_string(k), deep_stringify(v)} end)
   defp deep_stringify(non_map), do: non_map
+
+  defp solid_parse(body) do
+    Solid.parse(body, tags: Solid.Tag.default_tags() |> Map.put("helper", Beacon.Content.Snippets.TagHelper))
+  end
 
   # ERROR PAGES
 
