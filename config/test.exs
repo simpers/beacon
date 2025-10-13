@@ -9,7 +9,7 @@ config :beacon, ecto_repos: [Beacon.BeaconTest.Repo]
 config :tailwind, version: "3.4.4"
 
 config :beacon, Beacon.BeaconTest.Repo,
-  url: System.get_env("DATABASE_URL") || "postgres://localhost:5432/beacon_test",
+  url: System.get_env("DATABASE_URL") || "postgres://postgres:postgres@localhost:5432/beacon_test",
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: System.schedulers_online() * 2,
   priv: "test/support",
