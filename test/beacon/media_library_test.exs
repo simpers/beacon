@@ -31,6 +31,7 @@ defmodule Beacon.MediaLibraryTest do
       setup_multipart_upload_provider(bypass, self(), "s3_site/image.webp")
 
       metadata = beacon_upload_metadata_fixture(file_name: "image.png", site: :s3_site)
+
       assert %Asset{file_name: "image.webp", media_type: "image/webp"} = asset = MediaLibrary.upload(metadata)
       assert "http://beacon-media-library.localhost/s3_site/image.webp" = MediaLibrary.url_for(asset)
     end

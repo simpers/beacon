@@ -215,8 +215,8 @@ defmodule Beacon.Web.Live.PageLiveTest do
           <meta content="IE=edge" http-equiv="X-UA-Compatible"/>
           <meta content="width=device-width, initial-scale=1" name="viewport"/>
         """
-        |> String.replace("\n", "")
-        |> String.replace("  ", "")
+        |> String.replace(["  ", "\n"], "")
+        # |> String.replace("  ", "")
         |> Regex.compile!()
 
       assert html =~ expected

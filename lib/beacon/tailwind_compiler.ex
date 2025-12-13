@@ -37,23 +37,31 @@ defmodule Beacon.RuntimeCSS.TailwindCompiler do
   @spec compile(Beacon.Types.Site.t()) :: {:ok, String.t()} | {:error, any()}
   def compile(site) when is_atom(site) do
     tmp_dir = tmp_dir!()
-    config_file_path = generate_tailwind_config_file(site, tmp_dir, beacon_content(tmp_dir))
+
+    content = beacon_content(tmp_dir)
+
+    # config_file_path = generate_tailwind_config_file(site, tmp_dir, content)
+
     templates_path = generate_template_files!(tmp_dir, site)
     input_css_path = generate_input_css_file!(tmp_dir, site)
-    output = execute(tmp_dir, config_file_path, input_css_path)
+
+    output = execute(tmp_dir, input_css_path)
+
     cleanup(tmp_dir, templates_path)
+
     {:ok, output}
   end
 
   defp generate_tailwind_config_file(site, tmp_dir, content) do
-    tailwind_config = tailwind_config_path!(site)
+    tailwind_config =
+      tailwind_config_path!(site)
 
     if !Application.get_env(:tailwind, :version) do
       default_tailwind_version = Beacon.tailwind_version()
       Application.put_env(:tailwind, :version, default_tailwind_version)
     end
 
-    Application.put_env(:tailwind, :beacon_runtime, [])
+    # Application.put_env(:tailwind, :beacon_runtime, [])
 
     tailwind_config = """
     const userConfig = require(\"#{tailwind_config}\")
@@ -72,26 +80,24 @@ defmodule Beacon.RuntimeCSS.TailwindCompiler do
     |> write_file!(tmp_dir, "tailwind.config.js")
   end
 
-  defp execute(tmp_dir, config_file_path, input_css_file_path) do
+  defp execute(tmp_dir, input_css_file_path) do
     output_css_path = Path.join(tmp_dir, "generated.css")
 
     opts =
       if Code.ensure_loaded?(Mix.Project) and Mix.env() in [:test, :dev] do
         ~w(
-      --config=#{config_file_path}
-      --input=#{input_css_file_path}
-      --output=#{output_css_path}
-    )
+          --input=#{input_css_file_path}
+          --output=#{output_css_path}
+        )
       else
         ~w(
-      --config=#{config_file_path}
-      --input=#{input_css_file_path}
-      --output=#{output_css_path}
-      --minify
-    )
+          --input=#{input_css_file_path}
+          --output=#{output_css_path}
+          --minify
+        )
       end
 
-    {cli_output, cli_exit_code} = run_cli(:beacon_runtime, opts)
+    {cli_output, cli_exit_code} = run_cli(:beacon, opts)
 
     output =
       if cli_exit_code == 0 do
@@ -107,7 +113,7 @@ defmodule Beacon.RuntimeCSS.TailwindCompiler do
         """
       end
 
-    cleanup(tmp_dir, [config_file_path, input_css_file_path, output_css_path])
+    cleanup(tmp_dir, [input_css_file_path, output_css_path])
 
     output
   end
@@ -117,6 +123,8 @@ defmodule Beacon.RuntimeCSS.TailwindCompiler do
   # https://github.com/phoenixframework/tailwind/blob/8cf9810474bf37c1b1dd821503d756885534d2ba/lib/tailwind.ex#L192
   @doc false
   def run_cli(profile, extra_args) when is_atom(profile) and is_list(extra_args) do
+    dbg()
+
     version =
       case Tailwind.bin_version() do
         {:ok, version} ->
@@ -133,9 +141,9 @@ defmodule Beacon.RuntimeCSS.TailwindCompiler do
           """
       end
 
-    if Version.compare(version, "3.3.0") == :lt do
+    if Version.compare(version, "4.0.0") == :lt do
       raise Beacon.LoaderError, """
-      Beacon requires Tailwind CSS 3.3.0 or higher.
+      Beacon requires Tailwind CSS 4.0.0 or higher.
 
       Please update your Tailwind CSS binary to the latest version.
 

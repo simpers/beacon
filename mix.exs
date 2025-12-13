@@ -9,7 +9,7 @@ defmodule Beacon.MixProject do
     [
       app: :beacon,
       version: @version,
-      elixir: "~> 1.14.1 or ~> 1.15",
+      elixir: "~> 1.18",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       name: "Beacon",
@@ -66,10 +66,10 @@ defmodule Beacon.MixProject do
       {:ecto_sql, "~> 3.6"},
       {:ex_brotli, "~> 0.3"},
       # FIXME: multipart copy in ex_aws_s3 2.5.0
-      {:ex_aws, "~> 2.4.0"},
-      {:ex_aws_s3, "~> 2.4.0"},
+      {:ex_aws, "~> 2.5"},
+      {:ex_aws_s3, "~> 2.5"},
       {:floki, ">= 0.30.0"},
-      {:gettext, "~> 0.26"},
+      {:gettext, "~> 1.0"},
       {:hackney, "~> 1.16"},
       {:image, "~> 0.40"},
       {:vix, "<= 0.30.0 or >= 0.31.1"},
@@ -85,20 +85,21 @@ defmodule Beacon.MixProject do
       {:safe_code, "~> 0.2"},
       {:solid, "~> 1.1"},
       # TODO: tailwind v4 needs more testing
-      {:tailwind, "~> 0.2"},
+      {:tailwind, "~> 0.4"},
       esbuild_version(),
       {:igniter, ">= 0.5.24", optional: true},
 
       # Dev, Test, Docs
-      {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:bandit, "~> 1.0", only: :dev, optional: true},
-      {:phoenix_view, "~> 2.0", only: [:dev, :test]},
+      {:bypass, "~> 2.1", only: :test},
+      {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.29", only: :dev},
-      {:makeup_elixir, "~> 1.0.1 or ~> 1.1", only: :dev},
+      {:lazy_html, ">= 0.1.0", only: :test},
       {:makeup_eex, "~> 2.0", only: :dev},
+      {:makeup_elixir, "~> 1.0.1 or ~> 1.1", only: :dev},
       {:makeup_syntect, "~> 0.1", only: :dev},
       {:phoenix_live_reload, "~> 1.3", only: :dev},
-      {:bypass, "~> 2.1", only: :test},
+      {:phoenix_view, "~> 2.0", only: [:dev, :test]},
       {:phx_new, "~> 1.7", only: :test, runtime: false}
     ]
   end
@@ -134,7 +135,11 @@ defmodule Beacon.MixProject do
         "esbuild.install --if-missing",
         "cmd npm install --prefix assets"
       ],
-      "assets.build": ["esbuild cdn", "esbuild cdn_min", "esbuild tailwind_bundle"]
+      "assets.build": [
+        "esbuild cdn",
+        "esbuild cdn_min",
+        "tailwind beacon"
+      ]
     ]
   end
 
