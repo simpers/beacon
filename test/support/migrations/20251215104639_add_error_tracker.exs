@@ -1,4 +1,4 @@
-defmodule Beacon.BeaconTest.Repo.Migrations.AddErrorTracker do
+defmodule Demo.Repo.Repo.Migrations.AddErrorTracker do
   use Ecto.Migration
 
   def up, do: ErrorTracker.Migration.up()

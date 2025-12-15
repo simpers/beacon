@@ -23,6 +23,11 @@ defmodule Demo.Repo do
   use Ecto.Repo, otp_app: :beacon, adapter: Ecto.Adapters.Postgres
 end
 
+# config :error_tracker, repo: Beacon.BeaconTest.Repo, otp_app: :beacon, enabled: true
+
+error_tracker_conf = [repo: Demo.Repo, otp_app: :beacon, enabled: true]
+
+Application.put_all_env(error_tracker: error_tracker_conf)
 Application.put_env(:beacon, :ecto_repos, [Demo.Repo])
 
 Application.put_env(:beacon, Demo.Repo,
@@ -97,6 +102,16 @@ defmodule DemoWeb.Router do
     pipe_through :browser
     beacon_site "/dev", site: :dev, session: {__MODULE__, :session, []}, on_mount: DemoWeb.InitAssigns
     beacon_site "/dy", site: :dy
+  end
+
+  if Application.compile_env(:beacon, :dev_routes) do
+    use ErrorTracker.Web, :router
+
+    scope "/admin" do
+      pipe_through :browser
+
+      error_tracker_dashboard "/errors"
+    end
   end
 
   def session(_conn), do: %{"env" => "dev"}
