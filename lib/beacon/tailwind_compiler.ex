@@ -2,14 +2,15 @@ defmodule Beacon.RuntimeCSS.TailwindCompiler do
   @moduledoc """
   Tailwind compiler for runtime CSS, used on all sites.
 
-  The default configuration is fetched from `Path.join(Application.app_dir(:beacon, "priv"), "tailwind.config.js")`,
-  you can see the actual file at https://github.com/BeaconCMS/beacon/blob/main/priv/tailwind.config.js
+  Beacon supports Tailwind CSS v4.
 
-  That's the file used by default if no value is provided in the site configuration `t:Beacon.Config.tailwind_config/0`
+  The site configuration can optionally point to a Tailwind config file via
+  `t:Beacon.Config.tailwind_config/0`. If present, it is passed to the Tailwind CLI via
+  `--config`.
 
-  You can use any of the [available options from Tailwind CSS](https://tailwindcss.com/docs/configuration) but
-  you must bundle the file if using Plugins or requiring any external module, see the [Tailwind Setup guide](https://hexdocs.pm/beacon/tailwind-setup.html)
-  for more info and examples.
+  Note Tailwind v4 uses CSS-first configuration. Content discovery is performed via `@source`
+  directives, so this compiler injects `@source` globs for Beacon templates and common Phoenix
+  sources before invoking the Tailwind CLI.
   """
 
   require Logger
@@ -38,63 +39,39 @@ defmodule Beacon.RuntimeCSS.TailwindCompiler do
   def compile(site) when is_atom(site) do
     tmp_dir = tmp_dir!()
 
-    content = beacon_content(tmp_dir)
-
-    # config_file_path = generate_tailwind_config_file(site, tmp_dir, content)
-
     templates_path = generate_template_files!(tmp_dir, site)
     input_css_path = generate_input_css_file!(tmp_dir, site)
 
-    output = execute(tmp_dir, input_css_path)
+    output = execute(site, tmp_dir, input_css_path)
 
     cleanup(tmp_dir, templates_path)
 
     {:ok, output}
   end
 
-  defp generate_tailwind_config_file(site, tmp_dir, content) do
-    tailwind_config =
-      tailwind_config_path!(site)
-
-    if !Application.get_env(:tailwind, :version) do
-      default_tailwind_version = Beacon.tailwind_version()
-      Application.put_env(:tailwind, :version, default_tailwind_version)
-    end
-
-    # Application.put_env(:tailwind, :beacon_runtime, [])
-
-    tailwind_config = """
-    const userConfig = require(\"#{tailwind_config}\")
-
-    module.exports = {
-      ...userConfig,
-      content: [
-        <%= @beacon_content %>,
-        ...(userConfig.content || [])
-      ]
-    }
-    """
-
-    tailwind_config
-    |> EEx.eval_string(assigns: %{beacon_content: content})
-    |> write_file!(tmp_dir, "tailwind.config.js")
-  end
-
-  defp execute(tmp_dir, input_css_file_path) do
+  defp execute(site, tmp_dir, input_css_file_path) do
     output_css_path = Path.join(tmp_dir, "generated.css")
+
+    base_opts =
+      case tailwind_config_path(site) do
+        nil -> []
+        path -> ["--config=#{path}"]
+      end
 
     opts =
       if Code.ensure_loaded?(Mix.Project) and Mix.env() in [:test, :dev] do
-        ~w(
-          --input=#{input_css_file_path}
-          --output=#{output_css_path}
-        )
+        base_opts ++
+          ~w(
+            --input=#{input_css_file_path}
+            --output=#{output_css_path}
+          )
       else
-        ~w(
-          --input=#{input_css_file_path}
-          --output=#{output_css_path}
-          --minify
-        )
+        base_opts ++
+          ~w(
+            --input=#{input_css_file_path}
+            --output=#{output_css_path}
+            --minify
+          )
       end
 
     {cli_output, cli_exit_code} = run_cli(:beacon, opts)
@@ -123,8 +100,6 @@ defmodule Beacon.RuntimeCSS.TailwindCompiler do
   # https://github.com/phoenixframework/tailwind/blob/8cf9810474bf37c1b1dd821503d756885534d2ba/lib/tailwind.ex#L192
   @doc false
   def run_cli(profile, extra_args) when is_atom(profile) and is_list(extra_args) do
-    dbg()
-
     version =
       case Tailwind.bin_version() do
         {:ok, version} ->
@@ -175,19 +150,31 @@ defmodule Beacon.RuntimeCSS.TailwindCompiler do
     System.cmd(Tailwind.bin_path(), args, opts)
   end
 
-  defp tailwind_config_path!(site) do
+  defp tailwind_config_path(site) do
     tailwind_config = Beacon.Config.fetch!(site).tailwind_config
 
     if File.exists?(tailwind_config) do
       tailwind_config
     else
-      raise """
-      Tailwind config not found
+      nil
+    end
+  end
 
-      Make sure the provided file exists at #{inspect(tailwind_config)}
+  defp tailwind_config_path!(site) do
+    case tailwind_config_path(site) do
+      nil ->
+        tailwind_config = Beacon.Config.fetch!(site).tailwind_config
 
-      See Beacon.Config for more info.
-      """
+        raise """
+        Tailwind config not found
+
+        Make sure the provided file exists at #{inspect(tailwind_config)}
+
+        See Beacon.Config for more info.
+        """
+
+      path ->
+        path
     end
   end
 
@@ -259,49 +246,94 @@ defmodule Beacon.RuntimeCSS.TailwindCompiler do
         ["\n", "/* ", stylesheet.name, " */", "\n", stylesheet.content, "\n"]
       end)
 
+    source_directives = tailwind_source_directives(site, tmp_dir)
+
     input_css_path = Path.join(tmp_dir, "input.css")
-    File.write!(input_css_path, IO.iodata_to_binary([File.read!(tailwind_css_path), "\n", beacon_stylesheets]))
+
+    File.write!(
+      input_css_path,
+      IO.iodata_to_binary([
+        "/* Beacon Tailwind sources */\n",
+        source_directives,
+        "\n\n",
+        File.read!(tailwind_css_path),
+        "\n",
+        beacon_stylesheets
+      ])
+    )
+
     input_css_path
+  end
+
+  defp tailwind_source_directives(site, tmp_dir) do
+    tmp_dir
+    |> beacon_content_sources()
+    |> Kernel.++(tailwind_config_content_sources(site))
+    |> Enum.uniq()
+    |> Enum.map(&normalize_source/1)
+    |> Enum.map_join("\n", fn source ->
+      "@source \"#{source}\";"
+    end)
+  end
+
+  defp normalize_source("!" <> source) do
+    "!" <> normalize_source(source)
+  end
+
+  defp normalize_source(source) do
+    if Path.type(source) == :absolute do
+      source
+    else
+      Path.expand(source, File.cwd!())
+    end
+  end
+
+  defp tailwind_config_content_sources(site) do
+    case tailwind_config_path(site) do
+      nil ->
+        []
+
+      config_path ->
+        config_path
+        |> File.read!()
+        |> parse_tailwind_config_content_sources()
+    end
+  end
+
+  defp parse_tailwind_config_content_sources(config) when is_binary(config) do
+    with [content_block] <- Regex.run(~r/content\s*:\s*\[(.*?)\]/ms, config, capture: :all_but_first) do
+      Regex.scan(~r/["']([^"']+)["']/, content_block, capture: :all_but_first)
+      |> Enum.map(fn [source] -> source end)
+    else
+      _ -> []
+    end
   end
 
   defp remove_special_chars(name), do: String.replace(name, ~r/[^[:alnum:]_]+/, "_")
 
-  # include paths for the following scenarios:
+  # Sources include paths for the following scenarios:
   # - regular app
   # - umbrella app running from root
   # - umbrella app running from the web app
-  defp beacon_content(tmp_dir) do
-    ~s(
-    './assets/js/**/*.js',
-    './lib/*_web.ex',
-    './lib/*_web/**/*.*ex',
-    './apps/*_web/assets/**/*.js',
-    '!./apps/*_web/assets/node_modules/**',
-    './apps/*_web/lib/*_web.ex',
-    './apps/*_web/lib/*_web/**/*.*ex',
-    '#{tmp_dir}/*.template'
-    )
+  #
+  # Tailwind v4 uses `@source` directives for content discovery.
+  defp beacon_content_sources(tmp_dir) do
+    [
+      "./assets/js/**/*.js",
+      "./lib/*_web.ex",
+      "./lib/*_web/**/*.*ex",
+      "./apps/*_web/assets/**/*.js",
+      "!./apps/*_web/assets/node_modules/**",
+      "./apps/*_web/lib/*_web.ex",
+      "./apps/*_web/lib/*_web/**/*.*ex",
+      "#{tmp_dir}/*.template"
+    ]
   end
 
   defp tmp_dir! do
     tmp_dir = Path.join(System.tmp_dir!(), random_dir())
     File.mkdir_p!(tmp_dir)
     tmp_dir
-  end
-
-  defp write_file!(content, tmp_dir, filename) do
-    Logger.debug("""
-    writing file #{filename}
-
-    Content:
-
-      #{content}
-
-    """)
-
-    filepath = Path.join(tmp_dir, filename)
-    File.write!(filepath, content)
-    filepath
   end
 
   defp random_dir, do: :crypto.strong_rand_bytes(12) |> Base.encode16()

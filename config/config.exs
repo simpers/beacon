@@ -2,8 +2,6 @@ import Config
 
 config :beacon, :generators, binary_id: true
 
-config :error_tracker, repo: Beacon.BeaconTest.Repo, otp_app: :beacon, enabled: true
-
 config :phoenix, :json_library, Jason
 
 config :tailwind,

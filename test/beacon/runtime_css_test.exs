@@ -16,6 +16,6 @@ defmodule Beacon.RuntimeCSSTest do
 
   test "fetch uncompressed deflate" do
     RuntimeCSS.load!(@site)
-    assert RuntimeCSS.fetch(@site, :deflate) =~ "/* tailwind"
+    assert RuntimeCSS.fetch(@site, :deflate) =~ "/*! tailwindcss"
   end
 end
