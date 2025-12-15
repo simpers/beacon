@@ -16,10 +16,19 @@ defmodule Beacon.Support.BypassHelpers do
 
       case conn do
         %{method: "POST", request_path: ^request_path, query_params: %{"uploadId" => ^upload_id}} ->
+          body = """
+          <CompleteMultipartUploadResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+            <Location>http://beacon-media-library.localhost/#{key}</Location>
+            <Bucket>beacon-media-library</Bucket>
+            <Key>#{key}</Key>
+            <ETag>\"abc123\"</ETag>
+          </CompleteMultipartUploadResult>
+          """
+
           send(test_pid, :completed_upload)
 
           conn
-          |> Plug.Conn.send_resp(200, "")
+          |> Plug.Conn.send_resp(200, body)
 
         %{method: "POST", request_path: ^request_path} ->
           body = """
