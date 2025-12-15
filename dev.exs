@@ -26,7 +26,7 @@ end
 Application.put_env(:beacon, :ecto_repos, [Demo.Repo])
 
 Application.put_env(:beacon, Demo.Repo,
-  url: System.get_env("DATABASE_URL") || "postgres://localhost:5432/beacon_dev",
+  url: System.get_env("DATABASE_URL") || "postgres://postgres:postgres@localhost:5432/beacon_dev",
   pool_size: System.schedulers_online() * 2,
   priv: "test/support",
   stacktrace: true,
@@ -42,11 +42,19 @@ Demo.Repo.start_link()
 Ecto.Migrator.run(Demo.Repo, path, :up, all: true, log_migrations_sql: true)
 Demo.Repo.stop()
 
+proxy_port =
+  System.get_env("PROXY_PORT", "4001")
+  |> String.to_integer()
+
+demo_port =
+  System.get_env("PORT", "4100")
+  |> String.to_integer()
+
 Application.put_env(:beacon, DemoWeb.ProxyEndpoint,
   adapter: Bandit.PhoenixAdapter,
   check_origin: {DemoWeb.ProxyEndpoint, :check_origin, []},
-  url: [port: 4001, scheme: "http"],
-  http: [ip: {0, 0, 0, 0}, port: 4001],
+  url: [port: proxy_port, scheme: "http"],
+  http: [ip: {0, 0, 0, 0}, port: proxy_port],
   live_view: [signing_salt: "aaaaaaaa"],
   secret_key_base: String.duplicate("a", 64),
   server: true
@@ -54,7 +62,7 @@ Application.put_env(:beacon, DemoWeb.ProxyEndpoint,
 
 Application.put_env(:beacon, DemoWeb.Endpoint,
   adapter: Bandit.PhoenixAdapter,
-  http: [ip: {0, 0, 0, 0}, port: 4100],
+  http: [ip: {0, 0, 0, 0}, port: demo_port],
   server: true,
   live_view: [signing_salt: "aaaaaaaa"],
   secret_key_base: String.duplicate("a", 64),
@@ -104,9 +112,22 @@ defmodule DemoWeb.InitAssigns do
 end
 
 defmodule DemoWeb.ProxyEndpoint do
+  allowed_origins = [
+    "http://localhost:#{demo_port}",
+    "http://localhost:#{proxy_port}",
+    "http://mini.fg:#{demo_port}",
+    "http://mini.fg:#{proxy_port}"
+  ]
+
+  tidewave_opts = [
+    allow_remote_access: true,
+    allowed_origins: allowed_origins
+  ]
+
   use Beacon.ProxyEndpoint,
     otp_app: :beacon,
     session_options: [store: :cookie, key: "_beacon_dev_key", signing_salt: "pMQYsz0UKEnwxJnQrVwovkBAKvU3MiuL"],
+    tidewave_opts: tidewave_opts,
     fallback: DemoWeb.Endpoint
 end
 

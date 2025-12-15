@@ -15,13 +15,22 @@ defmodule Beacon.ProxyEndpoint do
       fallback = Keyword.get(unquote(opts), :fallback) || raise Beacon.RuntimeError, "missing required option :fallback in Beacon.ProxyEndpoint"
       Module.put_attribute(__MODULE__, :__beacon_proxy_fallback__, fallback)
 
+      # || raise Beacon.RuntimeError, "missing required option :tidewave_opts in Beacon.ProxyEndpoint"
+      tidewave_opts = Keyword.get(unquote(opts), :tidewave_opts)
+      Module.put_attribute(__MODULE__, :__tidewave_opts__, tidewave_opts)
+
       use Phoenix.Endpoint, otp_app: otp_app
+
       import Plug.Conn, only: [put_resp_content_type: 2, put_resp_header: 3, halt: 1]
       import Phoenix.Controller, only: [accepts: 2, put_view: 2, render: 3]
 
       socket "/live", Phoenix.LiveView.Socket,
         websocket: [connect_info: [session: @session_options]],
         longpoll: [connect_info: [session: @session_options]]
+
+      if Code.ensure_loaded?(Tidewave) do
+        plug Tidewave, tidewave_opts
+      end
 
       plug :robots
       plug :sitemap_index

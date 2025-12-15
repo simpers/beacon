@@ -10,14 +10,15 @@ defmodule Beacon.MixProject do
       app: :beacon,
       version: @version,
       elixir: "~> 1.18",
-      elixirc_paths: elixirc_paths(Mix.env()),
-      start_permanent: Mix.env() == :prod,
-      name: "Beacon",
-      homepage_url: @homepage_url,
-      source_url: @source_url,
       description: """
       Open-source Content Management System (CMS) built with Phoenix LiveView. Faster render times to boost SEO performance, even for the most content-heavy pages.
       """,
+      elixirc_paths: elixirc_paths(Mix.env()),
+      homepage_url: @homepage_url,
+      listeners: [Phoenix.CodeReloader],
+      name: "Beacon",
+      start_permanent: Mix.env() == :prod,
+      source_url: @source_url,
       package: package(),
       deps: deps(),
       aliases: aliases(),
@@ -93,14 +94,18 @@ defmodule Beacon.MixProject do
       {:bandit, "~> 1.0", only: :dev, optional: true},
       {:bypass, "~> 2.1", only: :test},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
+      {:error_tracker, "~> 0.7", only: [:dev, :test]},
       {:ex_doc, "~> 0.29", only: :dev},
+      {:heroicons, github: "tailwindlabs/heroicons", tag: "v2.2.0", sparse: "optimized", app: false, compile: false, depth: 1},
       {:lazy_html, ">= 0.1.0", only: :test},
       {:makeup_eex, "~> 2.0", only: :dev},
       {:makeup_elixir, "~> 1.0.1 or ~> 1.1", only: :dev},
       {:makeup_syntect, "~> 0.1", only: :dev},
       {:phoenix_live_reload, "~> 1.3", only: :dev},
       {:phoenix_view, "~> 2.0", only: [:dev, :test]},
-      {:phx_new, "~> 1.7", only: :test, runtime: false}
+      {:phx_new, "~> 1.7", only: :test, runtime: false},
+      {:tidewave, "~> 0.5", only: [:dev, :test]},
+      {:usage_rules, "~> 0.1", only: [:dev, :test], runtime: false}
     ]
   end
 
@@ -131,7 +136,7 @@ defmodule Beacon.MixProject do
       ],
       "test.ci": ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
       "assets.setup": [
-        "tailwind.install --if-missing --no-assets",
+        "tailwind.install --if-missing",
         "esbuild.install --if-missing",
         "cmd npm install --prefix assets"
       ],

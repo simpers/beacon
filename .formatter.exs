@@ -5,7 +5,12 @@ locals_without_parens = [
 ]
 
 [
-  import_deps: [:ecto, :ecto_sql, :phoenix],
+  import_deps: [
+    :ecto,
+    :ecto_sql,
+    :error_tracker,
+    :phoenix
+  ],
   line_length: 150,
   plugins: [Phoenix.LiveView.HTMLFormatter],
   migrate_eex_to_curly_interpolation: false,
