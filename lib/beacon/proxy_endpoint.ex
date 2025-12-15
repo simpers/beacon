@@ -16,8 +16,7 @@ defmodule Beacon.ProxyEndpoint do
       Module.put_attribute(__MODULE__, :__beacon_proxy_fallback__, fallback)
 
       # || raise Beacon.RuntimeError, "missing required option :tidewave_opts in Beacon.ProxyEndpoint"
-      tidewave_opts = Keyword.get(unquote(opts), :tidewave_opts)
-      Module.put_attribute(__MODULE__, :__tidewave_opts__, tidewave_opts)
+      tidewave_opts = Keyword.get(unquote(opts), :tidewave_opts, false)
 
       use Phoenix.Endpoint, otp_app: otp_app
 
@@ -28,7 +27,7 @@ defmodule Beacon.ProxyEndpoint do
         websocket: [connect_info: [session: @session_options]],
         longpoll: [connect_info: [session: @session_options]]
 
-      if Code.ensure_loaded?(Tidewave) do
+      if tidewave_opts != false and Code.ensure_loaded?(Tidewave) do
         plug Tidewave, tidewave_opts
       end
 
