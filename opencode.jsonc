@@ -13,6 +13,6 @@
         "TIDEWAVE_MCP_ENDPOINT"
       ]
     }
-  }
+  },
   "lsp": { "elixir": {"disabled": true} }
 }
