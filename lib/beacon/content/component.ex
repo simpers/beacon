@@ -137,7 +137,7 @@ defmodule Beacon.Content.Component do
     not_allowed = Keyword.keys(opts) -- [:required, :default, :examples, :values, :doc]
 
     cond do
-      Enum.count(not_allowed) > 0 and type != "global" ->
+      not Enum.empty?(not_allowed) and type != "global" ->
         name = get_field(changeset, :name)
         add_error(changeset, :opts, "invalid opts for attribute #{inspect(name)}: #{inspect(not_allowed)}")
 
