@@ -94,7 +94,7 @@ defmodule Beacon.MixProject do
       {:bandit, "~> 1.0", only: :dev, optional: true},
       {:bypass, "~> 2.1", only: :test},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
-      {:error_tracker, "~> 0.7", only: [:dev, :test]},
+      {:error_tracker, "~> 0.7", only: [:dev]},
       {:ex_doc, "~> 0.29", only: :dev},
       {:heroicons, github: "tailwindlabs/heroicons", tag: "v2.2.0", sparse: "optimized", app: false, compile: false, depth: 1},
       {:lazy_html, ">= 0.1.0", only: :test},
