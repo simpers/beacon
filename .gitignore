@@ -50,3 +50,6 @@ beacon-*.tar
 
 # Local tool-versions
 .tool-versions
+
+/**/*.env
+/**/*.envrc
