@@ -9,7 +9,7 @@ defmodule Beacon.MixProject do
     [
       app: :beacon,
       version: @version,
-      elixir: "~> 1.18",
+      elixir: "~> 1.19",
       description: """
       Open-source Content Management System (CMS) built with Phoenix LiveView. Faster render times to boost SEO performance, even for the most content-heavy pages.
       """,
@@ -62,39 +62,60 @@ defmodule Beacon.MixProject do
       override_dep(:phoenix_live_view, ">= 1.0.1", "PHOENIX_LIVE_VIEW_VERSION", "PHOENIX_LIVE_VIEW_PATH"),
       override_dep(:mdex, "~> 0.9", "MDEX_VERSION", "MDEX_PATH"),
 
-      # Runtime
+      # # #
+      # ** Runtime **
+      # # #
+
       {:accent, "~> 1.1"},
       {:ecto_sql, "~> 3.6"},
       {:ex_brotli, "~> 0.3"},
-      # FIXME: multipart copy in ex_aws_s3 2.5.0
-      {:ex_aws, "~> 2.5"},
-      {:ex_aws_s3, "~> 2.5"},
       {:floki, ">= 0.30.0"},
       {:gettext, "~> 1.0"},
-      {:hackney, "~> 1.16"},
       {:image, "~> 0.40"},
       {:vix, "<= 0.30.0 or >= 0.31.1"},
       {:jason, "~> 1.0"},
-      # TODO: remove in v0.6 or when we enable components upgrade
-      {:oembed, "~> 0.4"},
-      {:req_embed, "~> 0.2"},
-      {:phoenix_ecto, "~> 4.4"},
-      {:phoenix_html, "~> 4.0"},
-      {:phoenix_html_helpers, "~> 1.0"},
-      {:phoenix_pubsub, "~> 2.1"},
       {:postgrex, "~> 0.16"},
       {:safe_code, "~> 0.2"},
       {:solid, "~> 1.1"},
       # TODO: tailwind v4 needs more testing
       {:tailwind, "~> 0.4"},
-      esbuild_version(),
+
+      # HTTP (Client)
+      # FIXME: multipart copy in ex_aws_s3 2.5.0
+      {:ex_aws, "~> 2.5"},
+      {:ex_aws_s3, "~> 2.5"},
+      {:hackney, "~> 1.16"},
+
+      # Phoenix & Server
+      {:phoenix_ecto, "~> 4.4"},
+      {:phoenix_html, "~> 4.0"},
+      {:phoenix_html_helpers, "~> 1.0"},
+      {:phoenix_pubsub, "~> 2.1"},
+
+      # Metrics and Error Tracking
+
+      # Tools
+      # esbuild_version(),
+      {:esbuild, "~> 0.5"},
       {:igniter, ">= 0.5.24", optional: true},
 
-      # Dev, Test, Docs
+      # # #
+      # TODO: Investigate the following packages
+      # 
+
+      # TODO: remove in v0.6 or when we enable components upgrade
+      {:oembed, "~> 0.4"},
+      {:req_embed, "~> 0.2"},
+
+      # # #
+      # ** Compile-time, dev, test, docs **
+      # # #
+
+      # Only used in /dev.exs during development
+      {:error_tracker, "~> 0.7", only: [:dev], optional: true},
       {:bandit, "~> 1.0", only: :dev, optional: true},
       {:bypass, "~> 2.1", only: :test},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
-      {:error_tracker, "~> 0.7", only: [:dev]},
       {:ex_doc, "~> 0.29", only: :dev},
       {:heroicons, github: "tailwindlabs/heroicons", tag: "v2.2.0", sparse: "optimized", app: false, compile: false, depth: 1},
       {:lazy_html, ">= 0.1.0", only: :test},
@@ -117,13 +138,13 @@ defmodule Beacon.MixProject do
     end
   end
 
-  # TODO: remove this check after we start requiring min OTP 25
-  # https://github.com/phoenixframework/esbuild/commit/83b786bb91438c496f7d917d98ac9c72e3b210c6
-  if System.otp_release() >= "25" do
-    defp esbuild_version, do: {:esbuild, "~> 0.5"}
-  else
-    defp esbuild_version, do: {:esbuild, "~> 0.5 and < 0.9.0"}
-  end
+  # # TODO: remove this check after we start requiring min OTP 25
+  # # https://github.com/phoenixframework/esbuild/commit/83b786bb91438c496f7d917d98ac9c72e3b210c6
+  # if System.otp_release() >= "25" do
+  #   defp esbuild_version, do: {:esbuild, "~> 0.5"}
+  # else
+  #   defp esbuild_version, do: {:esbuild, "~> 0.5 and < 0.9.0"}
+  # end
 
   defp aliases do
     [
